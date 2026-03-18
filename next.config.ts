@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    serverActions: {
+      allowedOrigins: [
+        'localhost:3000',
+        'crispy-journey-4p4r5vp97g7376p9-3000.app.github.dev',
+        '*.app.github.dev'
+      ]
+    },
+  },
 };
 
 export default nextConfig;
