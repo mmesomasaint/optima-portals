@@ -8,7 +8,7 @@ export default async function IntegrationsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // 1. Check if they already have an integration saved
+  // Check if they already have an integration saved
   const { data: integration } = await supabase
     .from("agency_integrations")
     .select("notion_access_token")
@@ -17,7 +17,7 @@ export default async function IntegrationsPage() {
 
   const isNotionConnected = !!integration?.notion_access_token;
 
-  // 2. Build the Notion OAuth URL
+  // Build the Notion OAuth URL
   // We pass the user ID in the 'state' parameter as a security measure
   const notionAuthUrl = `https://api.notion.com/v1/oauth/authorize?client_id=${process.env.NOTION_CLIENT_ID}&response_type=code&owner=user&redirect_uri=${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/notion/callback&state=${user.id}`;
 

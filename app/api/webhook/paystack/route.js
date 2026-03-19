@@ -8,11 +8,11 @@ const supabaseAdmin = createClient(
 );
 
 export async function POST(req) {
-  // 1. Get raw body and signature
+  // Get raw body and signature
   const body = await req.text();
   const signature = req.headers.get("x-paystack-signature");
 
-  // 2. Verify the Paystack Signature
+  // Verify the Paystack Signature
   const hash = crypto
     .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY)
     .update(body)
@@ -23,7 +23,7 @@ export async function POST(req) {
     return new Response("Invalid signature", { status: 400 });
   }
 
-  // 3. Parse the verified event
+  // Parse the verified event
   const event = JSON.parse(body);
 
   try {

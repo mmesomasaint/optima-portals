@@ -6,15 +6,15 @@ import { redirect } from "next/navigation";
 export async function createPaystackCheckout() {
   const supabase = await createClient();
   
-  // 1. Get current user
+  // Get current user
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("You must be logged in.");
 
-  // 2. Fetch their agency ID (Mocked here, ensure your users table is linked)
+  // Fetch their agency ID (Mocked here, ensure your users table is linked)
   // const agencyId = user.user_metadata.agency_id; 
   const agencyId = "placeholder-agency-id"; 
 
-  // 3. Initialize Paystack Transaction
+  // Initialize Paystack Transaction
   const payload = {
     email: user.email,
     amount: 14900, // Paystack amounts are in the lowest denomination (cents/kobo). $149 = 14900
@@ -46,6 +46,6 @@ export async function createPaystackCheckout() {
     throw new Error(data.message);
   }
 
-  // 4. Redirect to Paystack's hosted checkout page
+  // Redirect to Paystack's hosted checkout page
   redirect(data.data.authorization_url);
 }

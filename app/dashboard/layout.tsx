@@ -4,7 +4,7 @@ import Link from "next/link";
 import { LayoutDashboard, Users, Webhook, CreditCard, Settings, LogOut, Layers } from "lucide-react";
 
 export default async function DashboardLayout({ children } : { children: React.ReactNode }) {
-  // 1. THE SECURITY GATE: Server-side auth check
+  // THE SECURITY GATE: Server-side auth check
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
 
@@ -13,7 +13,7 @@ export default async function DashboardLayout({ children } : { children: React.R
     redirect("/login");
   }
 
-  // 2. Fetch the Agency's name for the UI
+  // Fetch the Agency's name for the UI
   const { data: agency } = await supabase
     .from("agencies")
     .select("name, stripe_subscription_status")

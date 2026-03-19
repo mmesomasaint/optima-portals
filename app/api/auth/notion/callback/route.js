@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(request) {
-  // 1. Get the URL parameters Notion sent us
+  // Get the URL parameters Notion sent us
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const agencyId = searchParams.get("state"); // We passed the user's ID in the state param
@@ -11,7 +11,7 @@ export async function GET(request) {
     return NextResponse.redirect(new URL("/dashboard/integrations?error=missing_params", request.url));
   }
 
-  // 2. Exchange the temporary code for the permanent access token
+  // Exchange the temporary code for the permanent access token
   const clientId = process.env.NOTION_CLIENT_ID;
   const clientSecret = process.env.NOTION_CLIENT_SECRET;
   
@@ -40,7 +40,7 @@ export async function GET(request) {
       return NextResponse.redirect(new URL("/dashboard/integrations?error=notion_rejection", request.url));
     }
 
-    // 3. Save the token securely in Supabase
+    // Save the token securely in Supabase
     const supabase = await createClient();
     
     // Using upsert in case they are reconnecting an existing integration
@@ -54,7 +54,7 @@ export async function GET(request) {
 
     if (dbError) throw new Error(dbError.message);
 
-    // 4. Redirect them back to the UI with a success message
+    // Redirect them back to the UI with a success message
     return NextResponse.redirect(new URL("/dashboard/integrations?success=true", request.url));
 
   } catch (error) {

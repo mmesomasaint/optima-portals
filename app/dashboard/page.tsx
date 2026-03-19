@@ -8,15 +8,15 @@ import Link from "next/link";
 export default async function DashboardOverview() {
   const supabase = await createClient();
   
-  // 1. Authenticate and get the agency's ID
+  // Authenticate and get the agency's ID
   const { data: { user } } = await supabase.auth.getUser();
   
-  // 2. Fetch the active portals from Supabase
+  // Fetch the active portals from Supabase
   // In a brand new account, this will be empty, so we handle the empty state gracefully.
   const { data: portals, error } = await supabase
     .from("active_portals")
     .select("*")
-    // .eq("agency_id", user?.id) // Uncomment this when your foreign keys are mapped perfectly
+    // .eq("agency_id", user?.id) // Uncomment this when our foreign keys are mapped perfectly
     .order("created_at", { ascending: false })
     .limit(10);
 
