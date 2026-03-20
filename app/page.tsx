@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, CheckCircle2, Zap, Layers, Lock, ArrowUpRight } from "lucide-react";
+import Link from "next/link";
 
 // Standardized animation variants for Framer Motion
 const fadeUp = {
@@ -32,7 +33,9 @@ export default function LandingPage() {
         <div className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-600">
           <a href="#features" className="hover:text-zinc-900 transition">Features</a>
           <a href="#pricing" className="hover:text-zinc-900 transition">Pricing</a>
-          <Button variant="ghost">Sign In</Button>
+          <Link href="/login">
+            <Button variant="ghost">Sign In</Button>
+          </Link>
           <Button className="bg-zinc-900 text-white">Get Started</Button>
         </div>
       </nav>

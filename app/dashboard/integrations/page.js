@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link2, Webhook, CheckCircle2 } from "lucide-react";
+import Notion from "@/components/icons/notion";
 
 export default async function IntegrationsPage() {
   const supabase = await createClient();
@@ -36,8 +37,7 @@ export default async function IntegrationsPage() {
           <CardHeader>
             <div className="flex justify-between items-start">
               <div className="w-12 h-12 bg-zinc-100 rounded-lg flex items-center justify-center mb-4 border border-zinc-200">
-                {/* Normally an SVG Notion logo goes here */}
-                <div className="w-6 h-6 bg-black rounded-sm"></div>
+                <Notion className="w-8 h-8 text-zinc-900" />
               </div>
               {isNotionConnected && (
                 <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-none font-medium flex items-center gap-1">
