@@ -10,11 +10,16 @@ export default async function IntegrationsPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   // Check if they already have an integration saved
-  const { data: integration } = await supabase
+  const { data: integration, error } = await supabase
     .from("agency_integrations")
     .select("notion_access_token")
     .eq("agency_id", user.id) // Assuming user.id matches the agency id
-    .single();
+    .maybeSingle();
+
+  // See what Supabase is complaining about
+  if (error) {
+    console.error("Supabase Read Error:", error);
+  }
 
   const isNotionConnected = !!integration?.notion_access_token;
 
