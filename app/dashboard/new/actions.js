@@ -30,7 +30,6 @@ export async function provisionPortal(prevState, formData) {
     .insert([{
       agency_id: user.id,
       client_name: clientName,
-      status: "provisioning",
       live_notion_url: null
     }])
     .select()
