@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link2, Webhook, CheckCircle2 } from "lucide-react";
 import Notion from "@/components/icons/notion";
+import MasterUrlInput from "./masterurlinput";
 
 export default async function IntegrationsPage() {
   const supabase = await createClient();
@@ -45,7 +46,7 @@ export default async function IntegrationsPage() {
                 <Notion className="w-8 h-8 text-zinc-900" />
               </div>
               {isNotionConnected && (
-                <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-none font-medium flex items-center gap-1">
+                <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-none font-medium flex items-center gap-1 cursor">
                   <CheckCircle2 className="w-3 h-3" /> Connected
                 </Badge>
               )}
@@ -54,6 +55,7 @@ export default async function IntegrationsPage() {
             <CardDescription className="text-zinc-500 mt-2">
               Required. Allows our AI agent to provision databases, map relations, and manage client permissions on your behalf.
             </CardDescription>
+            <MasterUrlInput />
           </CardHeader>
           <CardContent className="pt-4 border-t border-zinc-100 bg-zinc-50/50">
             {isNotionConnected ? (

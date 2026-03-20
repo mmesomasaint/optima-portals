@@ -47,7 +47,8 @@ export async function provisionPortal(prevState, formData) {
         portal_id: newPortal.id, // Pass this so Python knows which row to update when done
         client_name: clientName,
         client_request: projectScope,
-        notion_token: integration.notion_access_token // Pass the token securely server-to-server
+        notion_token: integration.notion_access_token, // Pass the token securely server-to-server
+        base_page_id: integration.base_notion_page_id
       })
     });
   } catch (error) {
