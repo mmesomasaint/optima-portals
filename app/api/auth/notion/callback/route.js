@@ -1,5 +1,5 @@
-import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 export async function GET(request) {
   // Get the URL parameters Notion sent us
@@ -8,7 +8,7 @@ export async function GET(request) {
   const agencyId = searchParams.get("state"); // We passed the user's ID in the state param
 
   if (!code || !agencyId) {
-    return NextResponse.redirect(new URL("/dashboard/integrations?error=missing_params", request.url));
+    return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/integrations?error=missing_params`, request.url));
   }
 
   // Exchange the temporary code for the permanent access token
@@ -37,14 +37,18 @@ export async function GET(request) {
 
     if (!response.ok) {
       console.error("Notion OAuth Error:", data);
-      return NextResponse.redirect(new URL("/dashboard/integrations?error=notion_rejection", request.url));
+      return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/integrations?error=notion_rejection`, request.url));
     }
 
-    // Save the token securely in Supabase
-    const supabase = await createClient();
+
+    // Create an ADMIN CLIENT to bypass RLS and save the token securely in supabase.
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY // Make sure this is in your .env file!
+    );
     
     // Using upsert in case they are reconnecting an existing integration
-    const { error: dbError } = await supabase
+    const { error: dbError } = await supabaseAdmin
       .from("agency_integrations")
       .upsert({
         agency_id: agencyId,
@@ -55,10 +59,10 @@ export async function GET(request) {
     if (dbError) throw new Error(dbError.message);
 
     // Redirect them back to the UI with a success message
-    return NextResponse.redirect(new URL("/dashboard/integrations?success=true", request.url));
+    return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/integrations?success=true`, request.url));
 
   } catch (error) {
     console.error("Token Exchange Failed:", error);
-    return NextResponse.redirect(new URL("/dashboard/integrations?error=server_fault", request.url));
+    return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/integrations?error=server_fault`, request.url));
   }
 }
