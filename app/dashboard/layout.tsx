@@ -13,12 +13,16 @@ export default async function DashboardLayout({ children } : { children: React.R
     redirect("/login");
   }
 
-  // Fetch the Agency's name for the UI
-  const { data: agency } = await supabase
-    .from("agencies")
-    .select("name, stripe_subscription_status")
-    .eq("id", user.id) // Assuming user.id matches the agency id, or use the correct relational query
-    .single();
+  // Fetch the Agency's name for the UI safely
+  const { data: agency, error: agencyError } = await supabase
+  .from("agencies")
+  .select("name, stripe_subscription_status")
+  .eq("id", user.id) 
+  .maybeSingle();
+
+  if (agencyError) {
+    console.error("Error fetching agency:", agencyError);
+  }
 
   return (
     <div className="flex h-screen bg-zinc-50 font-sans text-zinc-900 overflow-hidden">
