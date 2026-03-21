@@ -15,7 +15,7 @@ export async function provisionPortal(prevState, formData) {
   // Verify they have connected Notion
   const { data: integration } = await supabase
     .from("agency_integrations")
-    .select("notion_access_token")
+    .select("notion_access_token, base_notion_page_id")
     .eq("agency_id", user.id)
     .single();
 
@@ -39,22 +39,33 @@ export async function provisionPortal(prevState, formData) {
 
   // Fire the request to your FastAPI Python Engine
   try {
-    // Note: In production, this points to your Render.com URL
-    await fetch("https://crispy-journey-4p4r5vp97g7376p9-8000.app.github.dev/api/generate-os", {
+    const payload = {
+      portal_id: newPortal.id, 
+      client_name: clientName,
+      client_request: projectScope,
+      notion_token: integration.notion_access_token,
+      base_page_id: integration.base_notion_page_id
+    };
+    
+    // DEBUG: Print what we are sending BEFORE we send it
+    console.log("📦 [NEXT.JS] Sending payload to Python:", payload);
+
+    const response = await fetch("https://crispy-journey-4p4r5vp97g7376p9-8000.app.github.dev/api/generate-os", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        portal_id: newPortal.id, // Pass this so Python knows which row to update when done
-        client_name: clientName,
-        client_request: projectScope,
-        notion_token: integration.notion_access_token, // Pass the token securely server-to-server
-        base_page_id: integration.base_notion_page_id
-      })
+      body: JSON.stringify(payload)
     });
+
+    if (!response.ok) {
+      // THE FIX: Use .text() instead of .json() so it never crashes
+      const errorText = await response.text(); 
+      console.error("🚨 [FASTAPI RESPONSE]:", errorText);
+      return { error: `AI Engine rejected the payload: ${errorText}` };
+    }
+
   } catch (error) {
-    console.error("FastAPI Engine offline:", error);
-    // Even if Python is offline, we don't crash Next.js. We just log it.
-    return { error: "AI Engine is currently unreachable. Ensure Python server is running." };
+    console.error("🚨 [NEXT.JS NETWORK ERROR]:", error);
+    return { error: "AI Engine is unreachable or crashed during fetch." };
   }
 
   // Kick them back to the dashboard to watch the status badge pulse
