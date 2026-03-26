@@ -1,36 +1,31 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⚡️ Optima Portals: Client Dashboard
 
-## Getting Started
+The frontend architecture for Optima Logic's AI-powered Notion Operating System generator. Built to provide a seamless, high-converting UX for agencies to request, manage, and deploy custom relational databases.
 
-First, run the development server:
+## 🏗 Tech Stack
+* **Framework:** Next.js (React)
+* **Styling:** Tailwind CSS
+* **Database & Auth:** Supabase (Row Level Security enabled)
+* **Deployment:** Vercel
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Features
+* **OAuth Integration:** Securely connects to client Notion workspaces.
+* **Real-time Status Tracking:** Next.js UI pulses and updates as the Python backend processes LangGraph agents, builds databases, and maps relations.
+* **Error Boundaries:** Intercepts strict API failures (like missing Notion permissions) and translates them into actionable UI prompts for the user.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠 Local Development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Install Dependencies**
+   ```bash
+   npm install
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Environmental Variables**
+    Create a .env.local file in the root directory:
+    ```bash
+    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+    NEXT_PUBLIC_API_URL=[http://127.0.0.1:8000](http://127.0.0.1:8000) # Switch to Render URL in production
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. **Run the Developmnet Server**
+    ```bash
+    npm run dev
