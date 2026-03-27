@@ -6,7 +6,8 @@ const nextConfig: NextConfig = {
       allowedOrigins: [
         'localhost:3000',
         'crispy-journey-4p4r5vp97g7376p9-3000.app.github.dev',
-        '*.app.github.dev'
+        '*.app.github.dev',
+        'optima-portals-six.vercel.app',
       ]
     },
   },
