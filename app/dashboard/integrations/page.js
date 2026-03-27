@@ -13,7 +13,7 @@ export default async function IntegrationsPage() {
   // Check if they already have an integration saved
   const { data: integration, error } = await supabase
     .from("agency_integrations")
-    .select("notion_access_token")
+    .select("notion_access_token, base_notion_page_id")
     .eq("agency_id", user.id) // Assuming user.id matches the agency id
     .maybeSingle();
 
@@ -55,7 +55,7 @@ export default async function IntegrationsPage() {
             <CardDescription className="text-zinc-500 mt-2">
               Required. Allows our AI agent to provision databases, map relations, and manage client permissions on your behalf.
             </CardDescription>
-            <MasterUrlInput initialUrl={integration.base_notion_page_id} isNotionConnected={isNotionConnected} />
+            <MasterUrlInput initialUrl={integration.base_notion_page_id || ""} isNotionConnected={isNotionConnected} />
           </CardHeader>
           <CardContent className="pt-4 border-t border-zinc-100 bg-zinc-50/50">
             {isNotionConnected ? (
