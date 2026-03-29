@@ -50,6 +50,11 @@ export async function provisionPortal(prevState, formData) {
     // DEBUG: Print what we are sending BEFORE we send it
     console.log("📦 [NEXT.JS] Sending payload to Python:", payload);
 
+    if (!process.env.NEXT_PUBLIC_API_URL) {
+      console.error("🚨 Missing NEXT_PUBLIC_API_URL environment variable");
+      return { error: "System Configuration Error: API URL missing." };
+    }
+
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/generate-os`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
