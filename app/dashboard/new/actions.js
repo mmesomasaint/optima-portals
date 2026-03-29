@@ -50,7 +50,7 @@ export async function provisionPortal(prevState, formData) {
     // DEBUG: Print what we are sending BEFORE we send it
     console.log("📦 [NEXT.JS] Sending payload to Python:", payload);
 
-    const response = await fetch("https://crispy-journey-4p4r5vp97g7376p9-8000.app.github.dev/api/generate-os", {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/generate-os`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
