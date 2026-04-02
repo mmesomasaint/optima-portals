@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Building2, Workflow, Lock, Loader2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image'
 
 // Initialize the Supabase Client
 const supabase = createClient(
@@ -81,7 +82,13 @@ export default function IntakePipeline() {
       {/* Header */}
       <div className="absolute top-8 left-8 flex items-center gap-2">
         <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center border border-white/10">
-          <Workflow className="w-4 h-4 text-white" />
+            <Image 
+              src="/favicon.ico" 
+              alt="Optima Logic" 
+              width={20} 
+              height={20} 
+              className="w-4 h-4" 
+            />
         </div>
         <span className="text-sm font-semibold tracking-tight text-white">Optima Logic.</span>
       </div>
