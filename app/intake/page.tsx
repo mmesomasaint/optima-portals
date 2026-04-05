@@ -78,18 +78,6 @@ export default function IntakePipeline() {
       if (dbError) throw new Error(dbError.message);
       if (!insertedBrief) throw new Error("Failed to retrieve the new brief ID.");
 
-      // THE FIRE-AND-FORGET ENGINE TRIGGER
-      const engineUrl = process.env.NEXT_PUBLIC_ENGINE_URL;
-      if (engineUrl) {
-        fetch(`${engineUrl}/api/generate-os`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ brief_id: insertedBrief.id })
-        }).catch(err => console.error("Failed to wake the Optima Engine:", err));
-      } else {
-        console.warn("NEXT_PUBLIC_ENGINE_URL is missing. Engine not triggered.");
-      }
-
       // Teleport the user to their new Dashboard
       router.refresh();
       router.push('/dashboard');

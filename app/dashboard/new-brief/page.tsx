@@ -58,18 +58,6 @@ export default function NewBriefPage() {
       if (dbError) throw new Error(dbError.message);
       if (!insertedBrief) throw new Error("Failed to retrieve the new brief ID.");
 
-      // THE FIRE-AND-FORGET ENGINE TRIGGER
-      const engineUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (engineUrl) {
-        fetch(`${engineUrl}/api/generate-os`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ brief_id: insertedBrief.id })
-        }).catch(err => console.error("Failed to wake the Optima Engine:", err));
-      } else {
-        console.warn("NEXT_PUBLIC_ENGINE_URL is missing.");
-      }
-
       // Teleport back to Command Center
       router.refresh();
       router.push('/dashboard');

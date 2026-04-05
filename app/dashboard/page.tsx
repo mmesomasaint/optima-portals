@@ -2,28 +2,44 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Database, Clock, CheckCircle2, Workflow } from 'lucide-react';
-
-export const dynamic = 'force-dynamic';
+import { Loader2, Database, CheckCircle2, Workflow, AlertTriangle, Link2, Zap, ArrowUpRight, Calendar } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function ClientDashboard() {
+  const router = useRouter();
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(true);
-  const [brief, setBrief] = useState<any>(null);
+  const [isIgniting, setIsIgniting] = useState(false);
+  
+  // We now store ALL briefs, not just one
+  const [briefs, setBriefs] = useState<any[]>([]);
+  const [integration, setIntegration] = useState<any>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return; // Layout handles the actual redirect
+        if (!session) return;
 
+        // 1. Fetch ALL Briefs, ordered by newest first
         const { data: briefData } = await supabase
           .from('operational_briefs')
           .select('*')
           .eq('user_id', session.user.id)
-          .single();
+          .order('created_at', { ascending: false });
 
-        if (briefData) setBrief(briefData);
+        if (briefData) setBriefs(briefData);
+
+        // 2. Fetch the Integrations
+        const { data: integrationData } = await supabase
+          .from('agency_integrations')
+          .select('*')
+          .eq('agency_id', session.user.id)
+          .maybeSingle();
+
+        if (integrationData) setIntegration(integrationData);
+
       } catch (error) {
         console.error("Dashboard Error:", error);
       } finally {
@@ -32,7 +48,39 @@ export default function ClientDashboard() {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [supabase]);
+
+  // Derived State
+  const isNotionReady = !!(integration?.notion_access_token && integration?.base_page_id);
+  const latestBrief = briefs.length > 0 ? briefs[0] : null;
+  const deployedWorkspaces = briefs.filter(b => b.status === 'completed' && b.live_notion_url);
+
+  const handleIgniteEngine = async () => {
+    if (!latestBrief || !isNotionReady) return;
+    setIsIgniting(true);
+
+    try {
+      const engineUrl = process.env.NEXT_PUBLIC_ENGINE_URL;
+      if (engineUrl) {
+        await fetch(`${engineUrl}/api/generate-os`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ brief_id: latestBrief.id })
+        });
+        
+        // Optimistically update UI so it instantly shows "Processing"
+        const updatedBriefs = [...briefs];
+        updatedBriefs[0] = { ...latestBrief, status: 'processing' };
+        setBriefs(updatedBriefs);
+      } else {
+        alert("NEXT_PUBLIC_ENGINE_URL is missing.");
+      }
+    } catch (err) {
+      console.error("Webhook failed:", err);
+    } finally {
+      setIsIgniting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -43,79 +91,123 @@ export default function ClientDashboard() {
   }
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out pb-12">
       
       {/* Welcome Header */}
       <div className="mb-10">
         <h1 className="text-3xl md:text-4xl font-medium tracking-tight mb-3 text-white">
-          Welcome back, {brief?.company_name || 'Founder'}.
+          Welcome back, {latestBrief?.company_name || 'Founder'}.
         </h1>
-        <p className="text-zinc-400 font-light">Your bespoke Notion OS is currently in the engineering queue.</p>
+        <p className="text-zinc-400 font-light">Optima Engine Command Center.</p>
       </div>
 
-      {/* The Engine Status Card */}
-      <div className="bg-[#050505] border border-white/10 rounded-3xl p-8 mb-8 relative overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)]">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
-        
-        <div className="flex items-center gap-4 mb-8 relative z-10">
-          <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.15)]">
-            <Workflow className="w-6 h-6 text-emerald-500" />
+      {/* --- THE LOGIC GATE (For the newest brief only) --- */}
+      {latestBrief?.status === 'pending_ai_build' && !isNotionReady && (
+        <div className="bg-red-500/5 border border-red-500/10 rounded-3xl p-8 mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <AlertTriangle className="w-6 h-6 text-red-400" />
+            <h2 className="text-xl font-medium text-white">Action Required: Connect Notion</h2>
           </div>
-          <div>
-            <h2 className="text-xl font-medium text-white">Optima Engine v1.0</h2>
-            <div className="flex items-center gap-2 text-sm text-emerald-500 mt-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Processing Architecture
-            </div>
-          </div>
+          <p className="text-sm text-zinc-400 font-light mb-6">
+            Your operational brief is ready, but the AI engine cannot build your workspace until you grant it access to your Notion account and provide a Master URL.
+          </p>
+          <Link href="/dashboard/integrations">
+            <button className="px-6 py-3 bg-white text-black text-sm font-semibold rounded-xl hover:bg-zinc-200 transition-colors flex items-center gap-2">
+              <Link2 className="w-4 h-4" /> Go to Integrations
+            </button>
+          </Link>
         </div>
+      )}
 
-        {/* Progress Tracker */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
-          {/* Step 1: Complete */}
-          <div className="bg-white/5 border border-emerald-500/30 rounded-2xl p-5">
-            <CheckCircle2 className="w-5 h-5 text-emerald-500 mb-3" />
-            <h3 className="text-sm font-medium text-white mb-1">Brief Ingested</h3>
-            <p className="text-xs text-zinc-400 font-light">Requirements securely logged.</p>
-          </div>
+      {latestBrief?.status === 'pending_ai_build' && isNotionReady && (
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-3xl p-8 mb-8 text-center shadow-[0_0_40px_rgba(16,185,129,0.1)]">
+          <Zap className="w-8 h-8 text-emerald-500 mx-auto mb-4" />
+          <h2 className="text-xl font-medium text-white mb-2">Systems Ready for Deployment</h2>
+          <p className="text-sm text-zinc-400 font-light mb-6 max-w-lg mx-auto">
+            Your Notion workspace is connected. The LangGraph engine is primed to process your new brief for <span className="text-white font-medium">{latestBrief.company_name}</span>.
+          </p>
+          <button 
+            onClick={handleIgniteEngine}
+            disabled={isIgniting}
+            className="px-8 py-3.5 bg-emerald-500 text-black text-sm font-bold rounded-xl hover:bg-emerald-400 transition-colors inline-flex items-center gap-2 disabled:opacity-50"
+          >
+            {isIgniting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ignite AI Engine'}
+          </button>
+        </div>
+      )}
+
+      {/* --- THE ENGINE TRACKER (Only shows when the newest brief is processing or failed) --- */}
+      {(latestBrief?.status === 'processing' || latestBrief?.status === 'failed') && (
+        <div className="bg-[#050505] border border-white/10 rounded-3xl p-8 mb-8 relative overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
           
-          {/* Step 2: In Progress */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 relative overflow-hidden">
-            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500/50 animate-pulse" />
-            <Loader2 className="w-5 h-5 text-emerald-500 mb-3 animate-spin" />
-            <h3 className="text-sm font-medium text-white mb-1">Relational Mapping</h3>
-            <p className="text-xs text-zinc-400 font-light">AI is constructing databases.</p>
+          <div className="flex items-center justify-between mb-8 relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center">
+                <Workflow className="w-6 h-6 text-emerald-500" />
+              </div>
+              <div>
+                <h2 className="text-xl font-medium text-white">Optima Engine v1.0</h2>
+                <div className="flex items-center gap-2 text-sm mt-1">
+                  {latestBrief.status === 'failed' ? (
+                    <span className="text-red-400 flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> Build Failed</span>
+                  ) : (
+                    <span className="text-emerald-500 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Processing Architecture
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Step 3: Pending */}
-          <div className="bg-white/5 border border-white/5 rounded-2xl p-5 opacity-40">
-            <Clock className="w-5 h-5 text-zinc-500 mb-3" />
-            <h3 className="text-sm font-medium text-white mb-1">Deployment</h3>
-            <p className="text-xs text-zinc-400 font-light">Pending final QA review.</p>
+          {/* System Logs */}
+          <div className="bg-black border border-white/5 rounded-2xl p-5 relative z-10 font-mono text-xs">
+            <p className="text-zinc-500 mb-2">// ENGINE TELEMETRY LOGS</p>
+            <p className={latestBrief.status === 'failed' ? 'text-red-400' : 'text-zinc-300'}>
+              > {latestBrief.data_relationships || "Awaiting system response..."}
+            </p>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Brief Summary */}
-      {brief && (
-        <div className="bg-[#050505] border border-white/10 rounded-3xl p-8 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
-          <h3 className="text-lg font-medium mb-6 flex items-center gap-2 text-white">
-            <Database className="w-5 h-5 text-zinc-500" />
-            Submitted Workflow Vector
+      {/* --- DEPLOYED WORKSPACES ARCHIVE --- */}
+      {deployedWorkspaces.length > 0 && (
+        <div className="mt-12">
+          <h3 className="text-lg font-medium text-white flex items-center gap-2 mb-6">
+            <Database className="w-5 h-5 text-zinc-400" /> Deployed Architectures
           </h3>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <p className="text-[11px] uppercase tracking-widest text-zinc-500 font-semibold mb-2">Primary Bottleneck</p>
-              <p className="text-sm text-zinc-300 leading-relaxed bg-white/5 p-5 rounded-2xl border border-white/5 font-light">
-                {brief.primary_bottleneck}
-              </p>
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-widest text-zinc-500 font-semibold mb-2">Tools to Integrate</p>
-              <p className="text-sm text-zinc-300 bg-white/5 p-5 rounded-2xl border border-white/5 font-light">
-                {brief.current_tools}
-              </p>
-            </div>
+            {deployedWorkspaces.map((workspace) => (
+              <div key={workspace.id} className="bg-[#050505] border border-white/10 rounded-3xl p-6 group hover:border-white/20 transition-all flex flex-col">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h4 className="text-white font-medium text-lg">{workspace.company_name}</h4>
+                    <p className="text-xs text-zinc-500 flex items-center gap-1.5 mt-1">
+                      <Calendar className="w-3 h-3" /> 
+                      {new Date(workspace.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Active
+                  </span>
+                </div>
+                
+                <p className="text-sm text-zinc-400 font-light line-clamp-2 mb-6 flex-1">
+                  Bottleneck Solved: {workspace.primary_bottleneck}
+                </p>
+                
+                <a 
+                  href={workspace.live_notion_url} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="w-full py-3 bg-white/5 border border-white/10 text-white text-sm font-medium rounded-xl hover:bg-white/10 transition-colors flex items-center justify-center gap-2 group-hover:bg-white/10"
+                >
+                  Open Notion Workspace <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-white transition-colors" />
+                </a>
+              </div>
+            ))}
           </div>
         </div>
       )}
