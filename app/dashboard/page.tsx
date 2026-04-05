@@ -165,7 +165,7 @@ export default function ClientDashboard() {
           <div className="bg-black border border-white/5 rounded-2xl p-5 relative z-10 font-mono text-xs">
             <p className="text-zinc-500 mb-2">// ENGINE TELEMETRY LOGS</p>
             <p className={latestBrief.status === 'failed' ? 'text-red-400' : 'text-zinc-300'}>
-              > {latestBrief.data_relationships || "Awaiting system response..."}
+              &gt; {latestBrief.data_relationships || "Awaiting system response..."}
             </p>
           </div>
         </div>
