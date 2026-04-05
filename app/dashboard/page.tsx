@@ -1,135 +1,125 @@
-import { createClient } from "@/utils/supabase/server";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Plus, ExternalLink, Activity, Folder, Clock, Search } from "lucide-react";
-import Link from "next/link";
+'use client';
 
-export default async function DashboardOverview() {
-  const supabase = await createClient();
-  
-  // Authenticate and get the agency's ID
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  // Fetch the active portals from Supabase
-  // In a brand new account, this will be empty, so we handle the empty state gracefully.
-  const { data: portals, error } = await supabase
-    .from("active_portals")
-    .select("*")
-    // .eq("agency_id", user?.id) // Uncomment this when our foreign keys are mapped perfectly
-    .order("created_at", { ascending: false })
-    .limit(10);
+import { useEffect, useState } from 'react';
+import { createClient } from '@/utils/supabase/client';
+import { Loader2, Database, Clock, CheckCircle2, Workflow } from 'lucide-react';
 
-  // Mock data fallback for UI development if your database is currently empty
-  const displayPortals = portals && portals?.length && portals?.length > 0 ? portals : [
-    { id: 1, client_name: "Acme Corp", template_name: "Standard Retainer OS", status: "active", live_notion_url: "https://notion.so/acme", created_at: new Date().toISOString() },
-    { id: 2, client_name: "TechFlow Agency", template_name: "Web Build Portal", status: "provisioning", live_notion_url: null, created_at: new Date().toISOString() },
-    { id: 3, client_name: "Elevate Design", template_name: "Standard Retainer OS", status: "archived", live_notion_url: "https://notion.so/elevate", created_at: new Date(Date.now() - 864000000).toISOString() },
-  ];
+export const dynamic = 'force-dynamic';
+
+export default function ClientDashboard() {
+  const supabase = createClient();
+  const [isLoading, setIsLoading] = useState(true);
+  const [brief, setBrief] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return; // Layout handles the actual redirect
+
+        const { data: briefData } = await supabase
+          .from('operational_briefs')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (briefData) setBrief(briefData);
+      } catch (error) {
+        console.error("Dashboard Error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="h-[60vh] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
       
-      {/* --- HEADER --- */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Portals Overview</h1>
-          <p className="text-zinc-500 mt-1">Manage and deploy your client Notion workspaces.</p>
-        </div>
-        <Link href="/dashboard/new">
-          <Button className="bg-zinc-900 text-white hover:bg-zinc-800 shadow-sm h-10 px-5">
-            <Plus className="w-4 h-4 mr-2" /> Provision New Portal
-          </Button>
-        </Link>
+      {/* Welcome Header */}
+      <div className="mb-10">
+        <h1 className="text-3xl md:text-4xl font-medium tracking-tight mb-3 text-white">
+          Welcome back, {brief?.company_name || 'Founder'}.
+        </h1>
+        <p className="text-zinc-400 font-light">Your bespoke Notion OS is currently in the engineering queue.</p>
       </div>
 
-      {/* --- METRICS ROW --- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-zinc-200 shadow-sm bg-white">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-zinc-500 mb-1">Active Workspaces</p>
-              <p className="text-3xl font-bold text-zinc-900">12</p>
-            </div>
-            <div className="w-12 h-12 bg-zinc-100 rounded-full flex items-center justify-center">
-              <Folder className="w-6 h-6 text-zinc-700" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-zinc-200 shadow-sm bg-white">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-zinc-500 mb-1">Deploying Now</p>
-              <p className="text-3xl font-bold text-zinc-900">1</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
-              <Activity className="w-6 h-6 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-zinc-200 shadow-sm bg-white">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-zinc-500 mb-1">Hours Saved (Est)</p>
-              <p className="text-3xl font-bold text-green-600">48h</p>
-            </div>
-            <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
-              <Clock className="w-6 h-6 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* --- DATA TABLE --- */}
-      <Card className="border-zinc-200 shadow-sm bg-white overflow-hidden">
-        <CardHeader className="border-b border-zinc-100 bg-zinc-50/50 pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-bold">Recent Deployments</CardTitle>
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-              <input
-                type="text" 
-                placeholder="Search clients..." 
-                className="pl-9 pr-4 py-2 border border-zinc-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 w-64"
-              />
+      {/* The Engine Status Card */}
+      <div className="bg-[#050505] border border-white/10 rounded-3xl p-8 mb-8 relative overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
+        
+        <div className="flex items-center gap-4 mb-8 relative z-10">
+          <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.15)]">
+            <Workflow className="w-6 h-6 text-emerald-500" />
+          </div>
+          <div>
+            <h2 className="text-xl font-medium text-white">Optima Engine v1.0</h2>
+            <div className="flex items-center gap-2 text-sm text-emerald-500 mt-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Processing Architecture
             </div>
           </div>
-        </CardHeader>
-        <div className="divide-y divide-zinc-100">
-          {displayPortals?.map((portal) => (
-            <div key={portal.id} className="p-4 sm:px-6 flex items-center justify-between hover:bg-zinc-50 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="hidden sm:flex w-10 h-10 bg-zinc-100 rounded-md items-center justify-center text-zinc-500 font-bold text-sm uppercase">
-                  {portal.client_name.substring(0, 2)}
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-zinc-900">{portal.client_name}</p>
-                  <p className="text-xs text-zinc-500 mt-0.5">Template: {portal.template_name || "Custom Built"}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-6">
-                {/* Status Badge Logic */}
-                {portal.status === "active" && <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-none font-medium">Active</Badge>}
-                {portal.status === "provisioning" && <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-none font-medium animate-pulse">Provisioning...</Badge>}
-                {portal.status === "archived" && <Badge className="bg-zinc-100 text-zinc-600 hover:bg-zinc-100 border-none font-medium">Archived</Badge>}
-                
-                {/* Action Button */}
-                {portal.status === "active" ? (
-                  <Link href={portal.live_notion_url || "#"} target="_blank" className="text-zinc-500 hover:text-zinc-900 transition-colors p-2">
-                    <ExternalLink className="w-4 h-4" />
-                  </Link>
-                ) : (
-                  <div className="w-8 h-8"></div> // Spacer to keep alignment when button is missing
-                )}
-              </div>
-            </div>
-          ))}
         </div>
-      </Card>
-      
+
+        {/* Progress Tracker */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+          {/* Step 1: Complete */}
+          <div className="bg-white/5 border border-emerald-500/30 rounded-2xl p-5">
+            <CheckCircle2 className="w-5 h-5 text-emerald-500 mb-3" />
+            <h3 className="text-sm font-medium text-white mb-1">Brief Ingested</h3>
+            <p className="text-xs text-zinc-400 font-light">Requirements securely logged.</p>
+          </div>
+          
+          {/* Step 2: In Progress */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 relative overflow-hidden">
+            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500/50 animate-pulse" />
+            <Loader2 className="w-5 h-5 text-emerald-500 mb-3 animate-spin" />
+            <h3 className="text-sm font-medium text-white mb-1">Relational Mapping</h3>
+            <p className="text-xs text-zinc-400 font-light">AI is constructing databases.</p>
+          </div>
+
+          {/* Step 3: Pending */}
+          <div className="bg-white/5 border border-white/5 rounded-2xl p-5 opacity-40">
+            <Clock className="w-5 h-5 text-zinc-500 mb-3" />
+            <h3 className="text-sm font-medium text-white mb-1">Deployment</h3>
+            <p className="text-xs text-zinc-400 font-light">Pending final QA review.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Brief Summary */}
+      {brief && (
+        <div className="bg-[#050505] border border-white/10 rounded-3xl p-8 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+          <h3 className="text-lg font-medium mb-6 flex items-center gap-2 text-white">
+            <Database className="w-5 h-5 text-zinc-500" />
+            Submitted Workflow Vector
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-[11px] uppercase tracking-widest text-zinc-500 font-semibold mb-2">Primary Bottleneck</p>
+              <p className="text-sm text-zinc-300 leading-relaxed bg-white/5 p-5 rounded-2xl border border-white/5 font-light">
+                {brief.primary_bottleneck}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-widest text-zinc-500 font-semibold mb-2">Tools to Integrate</p>
+              <p className="text-sm text-zinc-300 bg-white/5 p-5 rounded-2xl border border-white/5 font-light">
+                {brief.current_tools}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

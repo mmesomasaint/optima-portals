@@ -1,19 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { saveMasterPageId } from "./actions"; // Import the server action we just built
-import { Input } from "@/components/ui/input";
-import { CardDescription, CardTitle } from "@/components/ui/card"
+import { saveMasterPageId } from "./actions"; 
 import { LoaderCircleIcon, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function MasterUrlInput({ initialUrl = "", isNotionConnected }) {
   const [inputValue, setInputValue] = useState(initialUrl);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [saveStatus, setSaveStatus] = useState("idle"); // idle, success, error
+  const [saveStatus, setSaveStatus] = useState("idle"); 
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleBlur = async () => {
-    // Don't fire the database call if the input hasn't changed or is empty
     if (inputValue === initialUrl || !inputValue.trim() || isNotionConnected) return;
 
     setIsUpdating(true);
@@ -26,7 +23,6 @@ export default function MasterUrlInput({ initialUrl = "", isNotionConnected }) {
       setErrorMessage(result.error);
     } else {
       setSaveStatus("success");
-      // Optionally reset to idle after 3 seconds so the green checkmark fades
       setTimeout(() => setSaveStatus("idle"), 3000); 
     }
     
@@ -34,25 +30,27 @@ export default function MasterUrlInput({ initialUrl = "", isNotionConnected }) {
   };
 
   return (
-    <div className="mt-4 border-t border-zinc-100 pt-6">
+    <div className="mb-6 border-t border-white/10 pt-6">
       <div className="space-y-2">
-        <label className="text-xs font-bold text-zinc-900 flex justify-between items-center" htmlFor="masterClientURL">
-          <CardTitle>Master Client URL</CardTitle>
+        <div className="flex justify-between items-center mb-1">
+          <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500" htmlFor="masterClientURL">
+            Master Client URL
+          </label>
           
-          {saveStatus === "success" && <span className="text-xs text-green-600 flex items-center"><CheckCircle2 className="w-3 h-3 mr-1" /> Saved</span>}
-          {saveStatus === "error" && <span className="text-xs text-red-600 flex items-center"><AlertCircle className="w-3 h-3 mr-1" /> Error</span>}
-        </label>
+          {saveStatus === "success" && <span className="text-xs text-emerald-400 flex items-center"><CheckCircle2 className="w-3 h-3 mr-1" /> Saved</span>}
+          {saveStatus === "error" && <span className="text-xs text-red-400 flex items-center"><AlertCircle className="w-3 h-3 mr-1" /> Error</span>}
+        </div>
         
-        <CardDescription className="text-zinc-500 mb-2">Paste the URL of your main Notion page. We extract the ID automatically.</CardDescription>
+        <p className="text-[13px] text-zinc-400 font-light mb-3">Paste the URL of your main Notion page. We extract the ID automatically.</p>
         
         <div className="relative">
           {isUpdating && (
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <LoaderCircleIcon className="w-5 h-5 text-zinc-500 animate-spin" />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+              <LoaderCircleIcon className="w-4 h-4 text-emerald-500 animate-spin" />
             </div>
           )}
           
-          <Input 
+          <input 
             id="masterClientURL" 
             name="masterClientURL" 
             type="text"
@@ -61,14 +59,18 @@ export default function MasterUrlInput({ initialUrl = "", isNotionConnected }) {
             onBlur={handleBlur}
             readOnly={isNotionConnected || isUpdating}
             placeholder="e.g., https://notion.so/Agency-Operations-8a3b2..." 
-            className={`h-11 w-full ${isUpdating ? "pr-10" : "pr-3"} ${
-              isNotionConnected ? "bg-zinc-50 cursor-not-allowed text-zinc-400" : "cursor-text"
+            className={`w-full bg-black border rounded-xl px-4 py-3 text-white text-sm focus:outline-none transition-colors ${
+              isUpdating ? "pr-10 border-white/10" : "pr-4"
+            } ${
+              isNotionConnected 
+                ? "bg-white/5 border-white/5 text-zinc-600 cursor-not-allowed" 
+                : "border-white/10 focus:border-emerald-500"
             }`}
           />
         </div>
         
         {saveStatus === "error" && (
-          <p className="text-xs text-red-600 font-medium mt-1">{errorMessage}</p>
+          <p className="text-xs text-red-400 font-medium mt-2">{errorMessage}</p>
         )}
       </div>
     </div>

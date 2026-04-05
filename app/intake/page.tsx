@@ -3,20 +3,16 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Building2, Workflow, Lock, Loader2 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image'
 
-// Initialize the Supabase Client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export default function IntakePipeline() {
   const router = useRouter();
+  const supabase = createClient();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isExistingUser, setIsExistingUser] = useState(false);
   
   // The Payload State
   const [formData, setFormData] = useState({
@@ -37,17 +33,33 @@ export default function IntakePipeline() {
     setIsSubmitting(true);
     
     try {
-      // Create the Secure User Account
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-      });
+      // Nuke any ghost sessions lingering in the browser
+      await supabase.auth.signOut();
+
+      let authData, authError;
+
+      // Handle both new and returning clients
+      if (isExistingUser) {
+        const response = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+        authData = response.data;
+        authError = response.error;
+      } else {
+        const response = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+        });
+        authData = response.data;
+        authError = response.error;
+      }
 
       if (authError) throw new Error(authError.message);
-      if (!authData.user) throw new Error("Authentication failed to return a user.");
+      if (!authData.user) throw new Error("Authentication failed.");
 
       // Inject the Operational Brief into the Database
-      const { error: dbError } = await supabase
+      const { data: insertedBrief, error: dbError } = await supabase
         .from('operational_briefs')
         .insert([
           {
@@ -56,14 +68,30 @@ export default function IntakePipeline() {
             team_size: formData.teamSize,
             current_tools: formData.currentTools,
             primary_bottleneck: formData.primaryBottleneck,
-            data_relationships: "Not specified in V1 form", // Fallback for the column we skipped
+            data_relationships: "Initializing AI build sequence...",
             status: 'pending_ai_build'
           }
-        ]);
+        ])
+        .select() // <-- CRITICAL: Tells Supabase to return the new row
+        .single();
 
       if (dbError) throw new Error(dbError.message);
+      if (!insertedBrief) throw new Error("Failed to retrieve the new brief ID.");
+
+      // THE FIRE-AND-FORGET ENGINE TRIGGER
+      const engineUrl = process.env.NEXT_PUBLIC_ENGINE_URL;
+      if (engineUrl) {
+        fetch(`${engineUrl}/api/generate-os`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ brief_id: insertedBrief.id })
+        }).catch(err => console.error("Failed to wake the Optima Engine:", err));
+      } else {
+        console.warn("NEXT_PUBLIC_ENGINE_URL is missing. Engine not triggered.");
+      }
 
       // Teleport the user to their new Dashboard
+      router.refresh();
       router.push('/dashboard');
 
     } catch (error: any) {
@@ -143,7 +171,7 @@ export default function IntakePipeline() {
               </motion.div>
             )}
 
-            {/* STEP 2: Logic */}
+            {/* Logic */}
             {step === 2 && (
               <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
                  <div className="flex items-center gap-3 mb-6">
@@ -174,14 +202,29 @@ export default function IntakePipeline() {
               </motion.div>
             )}
 
-            {/* STEP 3: Account Creation */}
+            {/* Account Creation */}
             {step === 3 && (
               <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
                  <div className="flex items-center gap-3 mb-6">
                   <Lock className="w-6 h-6 text-emerald-500" />
-                  <h2 className="text-2xl font-medium text-white">Secure Your Portal</h2>
+                  <h2 className="text-2xl font-medium text-white">{isExistingUser ? "Log In to Portal" : "Secure Your Portal"}</h2>
                 </div>
                 <p className="text-zinc-500 text-sm mb-6">Create an account to track your AI build progress and access your final workspace.</p>
+
+                <div className="mb-6 flex bg-black border border-white/10 rounded-lg p-1">
+                  <button 
+                    onClick={() => setIsExistingUser(false)}
+                    className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${!isExistingUser ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white'}`}
+                  >
+                    New Account
+                  </button>
+                  <button 
+                    onClick={() => setIsExistingUser(true)}
+                    className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${isExistingUser ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white'}`}
+                  >
+                    Existing Client
+                  </button>
+                </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>

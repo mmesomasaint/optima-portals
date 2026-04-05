@@ -1,85 +1,60 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Users, Webhook, CreditCard, Settings, LogOut, Layers } from "lucide-react";
+import { CreditCard, Settings, LogOut, Workflow, Plus } from "lucide-react";
+import { SidebarNav } from "@/components/mini/SidebarNav";
+import { SignOutButton } from "@/components/mini/SignOutButton";
+import { SidebarBottomNav } from "@/components/mini/SidebarBottomNav";
 
 export default async function DashboardLayout({ children } : { children: React.ReactNode }) {
-  // THE SECURITY GATE: Server-side auth check
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
 
-  // If they aren't logged in, instantly kick them back to the login page
   if (error || !user) {
     redirect("/login");
   }
 
-  // Fetch the Agency's name for the UI safely
-  const { data: agency, error: agencyError } = await supabase
-  .from("agencies")
-  .select("name, stripe_subscription_status")
-  .eq("id", user.id) 
+  const { data: brief, error: briefError } = await supabase
+  .from("operational_briefs")
+  .select("company_name, status")
+  .eq("user_id", user.id) 
   .maybeSingle();
 
-  if (agencyError) {
-    console.error("Error fetching agency:", agencyError);
-  }
-
   return (
-    <div className="flex h-screen bg-zinc-50 font-sans text-zinc-900 overflow-hidden">
+    <div className="flex h-screen bg-[#000000] font-sans text-white overflow-hidden">
       
-      {/* --- PERSISTENT SIDEBAR --- */}
-      <aside className="w-64 bg-zinc-950 text-zinc-300 flex flex-col border-r border-zinc-800">
+      <aside className="w-64 bg-[#050505] flex flex-col border-r border-white/10 relative z-20">
         
-        {/* Brand Header */}
-        <div className="h-16 flex items-center px-6 border-b border-zinc-800 mb-6">
-          <Layers className="w-5 h-5 text-white mr-3" />
-          <span className="font-bold text-white tracking-tight">Optima Portals</span>
+        <div className="h-20 flex items-center px-6 border-b border-white/10 mb-6">
+          <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 mr-3">
+            <Workflow className="w-4 h-4 text-white" />
+          </div>
+          <span className="font-semibold text-white tracking-tight">Optima Portals</span>
         </div>
 
-        {/* Agency Info */}
-        <div className="px-6 mb-8">
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">Active Workspace</p>
-          <p className="text-sm font-medium text-white truncate">{agency?.name || "Your Agency"}</p>
-          {agency?.stripe_subscription_status === 'trialing' && (
-            <span className="inline-block mt-2 px-2 py-1 bg-zinc-800 text-zinc-300 text-[10px] uppercase font-bold rounded">
-              14-Day Trial
-            </span>
-          )}
-        </div>
-
-        {/* Navigation Links */}
-        <nav className="flex-1 px-4 space-y-1">
-          <Link href="/dashboard" className="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-zinc-800 hover:text-white transition-colors">
-            <LayoutDashboard className="w-4 h-4 mr-3" /> Portals
-          </Link>
-          <Link href="/dashboard/templates" className="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors">
-            <Users className="w-4 h-4 mr-3" /> Blueprints
-          </Link>
-          <Link href="/dashboard/integrations" className="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors">
-            <Webhook className="w-4 h-4 mr-3" /> API & Zapier
-          </Link>
-        </nav>
-
-        {/* Bottom Actions */}
-        <div className="p-4 border-t border-zinc-800 space-y-1">
-          <Link href="/dashboard/billing" className="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors">
-            <CreditCard className="w-4 h-4 mr-3" /> Billing
-          </Link>
-          <Link href="/dashboard/settings" className="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors">
-            <Settings className="w-4 h-4 mr-3" /> Settings
-          </Link>
+        <div className="px-6">
+          <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-1.5">Active Workspace</p>
+          <p className="text-sm font-medium text-zinc-200 truncate">{brief?.company_name || "New Agency"}</p>
           
-          {/* We will wire this up to a server action later */}
-          <button className="w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-950/30 hover:text-red-300 transition-colors mt-2">
-            <LogOut className="w-4 h-4 mr-3" /> Sign Out
-          </button>
+          {/* THE UPSELL BUTTON */}
+          <Link 
+            href="/dashboard/new-deploy" 
+            className="my-8 w-full flex items-center justify-center px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-lg text-xs font-semibold hover:bg-emerald-500/20 transition-colors"
+          >
+            <Plus className="w-3 h-3 mr-1.5" /> Deploy New System
+          </Link>
         </div>
+
+        {/* The dynamic client-side navigation */}
+        <SidebarNav />
+        
+        {/* The dynamic client-side bottom navigation */}
+        <SidebarBottomNav />
       </aside>
 
-      {/* --- DYNAMIC MAIN CONTENT --- */}
-      {/* This is where the specific pages (Portals, Integrations, etc.) will render */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="h-full p-8">
+      <main className="flex-1 overflow-y-auto relative">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
+        <div className="h-full p-8 md:p-12 relative z-10 max-w-5xl mx-auto">
           {children}
         </div>
       </main>
