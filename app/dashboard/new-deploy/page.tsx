@@ -46,7 +46,7 @@ export default function NewDeployPage() {
             
             {/* REPLACE WITH YOUR SECOND PAYSTACK LINK */}
             <Link 
-              href="https://paystack.com/pay/new-deploy"
+              href={process.env.NEXT_PUBLIC_PAYSTACK_SHOP_URLB || "https://paystack.com/pay/new-brief"}
               target="_blank"
               className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-black text-sm font-semibold rounded-xl hover:bg-zinc-200 transition-colors"
             >
