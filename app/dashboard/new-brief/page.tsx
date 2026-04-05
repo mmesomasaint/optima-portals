@@ -59,7 +59,7 @@ export default function NewBriefPage() {
       if (!insertedBrief) throw new Error("Failed to retrieve the new brief ID.");
 
       // THE FIRE-AND-FORGET ENGINE TRIGGER
-      const engineUrl = process.env.NEXT_PUBLIC_ENGINE_URL;
+      const engineUrl = process.env.NEXT_PUBLIC_API_URL;
       if (engineUrl) {
         fetch(`${engineUrl}/api/generate-os`, {
           method: 'POST',
