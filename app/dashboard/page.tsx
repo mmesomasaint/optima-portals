@@ -51,7 +51,7 @@ export default function ClientDashboard() {
   }, [supabase]);
 
   // Derived State
-  const isNotionReady = !!(integration?.notion_access_token && integration?.base_page_id);
+  const isNotionReady = !!(integration?.notion_access_token && integration?.base_notion_page_id);
   const latestBrief = briefs.length > 0 ? briefs[0] : null;
   const deployedWorkspaces = briefs.filter(b => b.status === 'completed' && b.live_notion_url);
 
