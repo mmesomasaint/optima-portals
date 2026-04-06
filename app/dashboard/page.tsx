@@ -60,7 +60,7 @@ export default function ClientDashboard() {
     setIsIgniting(true);
 
     try {
-      const engineUrl = process.env.NEXT_PUBLIC_ENGINE_URL;
+      const engineUrl = process.env.NEXT_PUBLIC_API_URL;
       if (engineUrl) {
         await fetch(`${engineUrl}/api/generate-os`, {
           method: 'POST',
@@ -73,7 +73,7 @@ export default function ClientDashboard() {
         updatedBriefs[0] = { ...latestBrief, status: 'processing' };
         setBriefs(updatedBriefs);
       } else {
-        alert("NEXT_PUBLIC_ENGINE_URL is missing.");
+        alert("NEXT_PUBLIC_API_URL is missing.");
       }
     } catch (err) {
       console.error("Webhook failed:", err);
