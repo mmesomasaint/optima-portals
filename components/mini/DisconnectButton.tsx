@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { disconnectNotion } from './actions';
+import { disconnectNotion } from '@/app/dashboard/integrations/actions';
 
 export default function DisconnectButton() {
   const [isDisconnecting, setIsDisconnecting] = useState(false);

@@ -1,8 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { Link2, Webhook, CheckCircle2 } from "lucide-react";
 import Notion from "@/components/icons/notion";
-import DisconnectButton from "./DisconnectButton";
-import MasterUrlInput from "./masterurlinput";
+import DisconnectButton from "@/components/mini/DisconnectButton";
+import MasterUrlInput from "@/components/mini/MasterURLInput";
 
 export default async function IntegrationsPage() {
   const supabase = await createClient();

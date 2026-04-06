@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { saveMasterPageId } from "./actions"; 
+import { saveMasterPageId } from "@/app/dashboard/integrations/actions"; 
 import { LoaderCircleIcon, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function MasterUrlInput({ initialUrl = "", isNotionConnected }) {
