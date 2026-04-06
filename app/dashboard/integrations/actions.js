@@ -50,3 +50,28 @@ export async function saveMasterPageId(rawUrl) {
 
   return { success: true, basePageId };
 }
+
+export async function disconnectNotion() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Unauthorized" };
+
+  // We update the row to clear the Notion data, rather than deleting the row, 
+  // so we don't break future Zapier integrations.
+  const { error: dbError } = await supabase
+    .from("agency_integrations")
+    .update({
+      notion_access_token: null,
+      base_notion_page_id: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("agency_id", user.id);
+
+  if (dbError) {
+    console.error("Database error during disconnect:", dbError);
+    return { error: "Failed to disconnect Notion workspace." };
+  }
+
+  return { success: true };
+}

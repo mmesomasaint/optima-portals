@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { Link2, Webhook, CheckCircle2 } from "lucide-react";
 import Notion from "@/components/icons/notion";
+import DisconnectButton from "./DisconnectButton";
 import MasterUrlInput from "./masterurlinput";
 
 export default async function IntegrationsPage() {
@@ -55,9 +56,7 @@ export default async function IntegrationsPage() {
 
           <div className="mt-auto pt-6 border-t border-white/10">
             {isNotionConnected ? (
-              <button className="w-full py-3.5 text-sm font-medium text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-colors">
-                Disconnect Workspace
-              </button>
+              <DisconnectButton />
             ) : (
               <a href={notionAuthUrl} className="block w-full">
                 <button className="w-full py-3.5 bg-white text-black text-sm font-semibold rounded-xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2">
