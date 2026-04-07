@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import { Plus, ArrowRight, Workflow, Database, Zap } from 'lucide-react';
-import Link from 'next/link';
 
 export default function NewDeployPage() {
   return (
@@ -45,13 +44,12 @@ export default function NewDeployPage() {
             <div className="text-xs text-zinc-500 uppercase tracking-widest font-semibold mb-6">One-Time</div>
             
             {/* REPLACE WITH YOUR SECOND PAYSTACK LINK */}
-            <Link 
+            <a 
               href={process.env.NEXT_PUBLIC_PAYSTACK_SHOP_URLB || "https://paystack.com/pay/new-brief"}
-              target="_blank"
               className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-black text-sm font-semibold rounded-xl hover:bg-zinc-200 transition-colors"
             >
               Initialize Instance <ArrowRight className="w-4 h-4" />
-            </Link>
+            </a>
           </div>
         </div>
       </div>
