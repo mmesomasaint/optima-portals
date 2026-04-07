@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { User, Lock, Loader2, CheckCircle2, Shield, AlertTriangle } from 'lucide-react';
+import { deleteUserAccount } from './actions';
+import { ConfirmModal } from '@/components/mini/ConfirmModal';
 
 export default function SettingsPage() {
   const supabase = createClient();
@@ -19,6 +22,33 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
+
+  // Delete Account State
+  const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // This just triggers the modal now
+  const triggerDelete = () => setShowDeleteModal(true);
+
+  // This executes when they click "Delete" inside the modal
+  const executeDeleteAccount = async () => {
+    setIsDeleting(true);
+    
+    const result = await deleteUserAccount();
+    
+    if (result.error) {
+      // Instead of alert(), we use an inline error state
+      setPasswordMessage({ type: 'error', text: `Deletion Failed: ${result.error}` });
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+      return;
+    }
+
+    await supabase.auth.signOut();
+    router.refresh();
+    router.push('/login');
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -160,12 +190,28 @@ export default function SettingsPage() {
           <p className="text-sm text-zinc-400 font-light mb-6">
             Permanently delete your account and wipe all operational brief data from the Optima Engine. This action cannot be undone.
           </p>
-          <button className="px-5 py-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium rounded-xl hover:bg-red-500/20 transition-colors">
-            Delete Account
+          <button 
+            onClick={triggerDelete}
+            disabled={isDeleting}
+            className="px-5 py-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium rounded-xl hover:bg-red-500/20 transition-colors">
+            {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Delete Account'}
           </button>
         </div>
 
       </div>
+
+      {/* --- THE CUSTOM MODAL --- */}
+      <ConfirmModal 
+        isOpen={showDeleteModal}
+        title="Delete Account"
+        message="Are you entirely sure you want to delete your account? This action is irreversible and will permanently sever your deployed Notion systems from the AI engine."
+        confirmText="Yes, Delete My Account"
+        cancelText="Cancel"
+        isDestructive={true}
+        isLoading={isDeleting}
+        onConfirm={executeDeleteAccount}
+        onCancel={() => setShowDeleteModal(false)}
+      />
     </div>
   );
 }

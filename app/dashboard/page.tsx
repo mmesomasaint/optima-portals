@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Database, CheckCircle2, Workflow, AlertTriangle, Link2, Zap, ArrowUpRight, Calendar } from 'lucide-react';
+import { Loader2, Database, CheckCircle2, Workflow, AlertTriangle, Link2, Zap, ArrowUpRight, Calendar, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -12,6 +12,7 @@ export default function ClientDashboard() {
   const [userName, setUserName] = useState<string>('Founder');
   const [isLoading, setIsLoading] = useState(true);
   const [isIgniting, setIsIgniting] = useState(false);
+  const [engineError, setEngineError] = useState('');
   
   // We now store ALL briefs, not just one
   const [briefs, setBriefs] = useState<any[]>([]);
@@ -69,6 +70,7 @@ export default function ClientDashboard() {
   const handleIgniteEngine = async () => {
     if (!latestBrief || !isNotionReady) return;
     setIsIgniting(true);
+    setEngineError(''); // Clear previous errors
 
     try {
       const engineUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -84,10 +86,11 @@ export default function ClientDashboard() {
         updatedBriefs[0] = { ...latestBrief, status: 'processing' };
         setBriefs(updatedBriefs);
       } else {
-        alert("NEXT_PUBLIC_API_URL is missing.");
+        setEngineError("System Error: API URL is missing. Please contact support.");
       }
     } catch (err) {
       console.error("Webhook failed:", err);
+      setEngineError("Failed to connect to the LangGraph Engine.");
     } finally {
       setIsIgniting(false);
     }
@@ -135,8 +138,17 @@ export default function ClientDashboard() {
           <Zap className="w-8 h-8 text-emerald-500 mx-auto mb-4" />
           <h2 className="text-xl font-medium text-white mb-2">Systems Ready for Deployment</h2>
           <p className="text-sm text-zinc-400 font-light mb-6 max-w-lg mx-auto">
-            Your Notion workspace is connected. The LangGraph engine is primed to process your new brief for <span className="text-white font-medium">{latestBrief.company_name}</span>.
+            Your Notion workspace is connected. The LangGraph engine is primed to process your new brief for <span className="text-white font-medium">{latestBrief.workspace_name || latestBrief.company_name}</span>.
           </p>
+
+          {/* Inline Error Display */}
+          {engineError && (
+            <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-center gap-2 text-red-400 text-xs max-w-md mx-auto">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              {engineError}
+            </div>
+          )}
+
           <button 
             onClick={handleIgniteEngine}
             disabled={isIgniting}
@@ -194,7 +206,9 @@ export default function ClientDashboard() {
               <div key={workspace.id} className="bg-[#050505] border border-white/10 rounded-3xl p-6 group hover:border-white/20 transition-all flex flex-col">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h4 className="text-white font-medium text-lg">{workspace.company_name}</h4>
+                    {/* The new dual-title layout */}
+                    <p className="text-[10px] text-zinc-500 font-semibold uppercase tracking-widest mb-1">{workspace.company_name}</p>
+                    <h4 className="text-white font-medium text-lg">{workspace.workspace_name || workspace.company_name}</h4>
                     <p className="text-xs text-zinc-500 flex items-center gap-1.5 mt-1">
                       <Calendar className="w-3 h-3" /> 
                       {new Date(workspace.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}

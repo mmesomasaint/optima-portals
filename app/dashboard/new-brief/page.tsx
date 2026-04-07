@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
-import { Workflow, ArrowRight, Loader2, Database } from 'lucide-react';
+import { Workflow, ArrowRight, Loader2, Database, AlertCircle } from 'lucide-react';
 
 export default function NewBriefPage() {
   const router = useRouter();
   const supabase = createClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState(''); 
   
   const [formData, setFormData] = useState({
     workspaceName: '',
@@ -36,6 +37,7 @@ export default function NewBriefPage() {
     if (!userId) return;
     
     setIsSubmitting(true);
+    setErrorMsg(''); // <-- Clear previous errors on new attempt
     
     try {
       // Inject the new Operational Brief
@@ -64,7 +66,7 @@ export default function NewBriefPage() {
 
     } catch (error: any) {
       console.error("Pipeline Error:", error);
-      alert(`Deployment Failed: ${error.message}`);
+      setErrorMsg(`Deployment Failed: ${error.message}`); // <-- Replaced alert()
     } finally {
       setIsSubmitting(false);
     }
@@ -114,6 +116,14 @@ export default function NewBriefPage() {
               <textarea required value={formData.primaryBottleneck} onChange={e => setFormData({...formData, primaryBottleneck: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors h-24 resize-none" placeholder="What needs to be fixed?" />
             </div>
           </div>
+
+          {/* --- THE ERROR BANNER --- */}
+          {errorMsg && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 text-red-400 text-xs">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              {errorMsg}
+            </div>
+          )}
 
           <button type="submit" disabled={isSubmitting || !formData.workspaceName || !formData.primaryBottleneck} className="w-full mt-8 py-3.5 bg-emerald-500 text-black text-sm font-semibold rounded-xl hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Launch Engine Build'} <ArrowRight className="w-4 h-4" />

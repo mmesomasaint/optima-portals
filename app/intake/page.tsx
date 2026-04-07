@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Building2, Workflow, Lock, Loader2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Building2, Workflow, Lock, Loader2, AlertCircle } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image'
@@ -13,6 +13,7 @@ export default function IntakePipeline() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExistingUser, setIsExistingUser] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   
   // The Payload State
   const [formData, setFormData] = useState({
@@ -28,11 +29,15 @@ export default function IntakePipeline() {
   });
 
   const handleNext = () => setStep((prev) => prev + 1);
-  const handleBack = () => setStep((prev) => prev - 1);
+  const handleBack = () => {
+    setStep((prev) => prev - 1);
+    setErrorMsg(''); // Clear errors when navigating back
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMsg(''); // <-- Clear previous errors on new attempt
     
     try {
       // Nuke any ghost sessions lingering in the browser
@@ -82,7 +87,7 @@ export default function IntakePipeline() {
             status: 'pending_ai_build'
           }
         ])
-        .select() // <-- CRITICAL: Tells Supabase to return the new row
+        .select() 
         .single();
 
       if (dbError) throw new Error(dbError.message);
@@ -94,7 +99,7 @@ export default function IntakePipeline() {
 
     } catch (error: any) {
       console.error("Pipeline Error:", error);
-      alert(`Deployment Failed: ${error.message}`);
+      setErrorMsg(`Deployment Failed: ${error.message}`); // <-- Replaced alert()
     } finally {
       setIsSubmitting(false);
     }
@@ -129,7 +134,7 @@ export default function IntakePipeline() {
                 initial={{ width: 0 }}
                 animate={{ width: step >= i ? '100%' : '0%' }}
                 transition={{ duration: 0.3 }}
-              />
+               />
             </div>
           ))}
         </div>
@@ -181,7 +186,7 @@ export default function IntakePipeline() {
               </motion.div>
             )}
 
-            {/* Logic */}
+            {/* STEP 2: Logic */}
             {step === 2 && (
               <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
                  <div className="flex items-center gap-3 mb-6">
@@ -212,7 +217,7 @@ export default function IntakePipeline() {
               </motion.div>
             )}
 
-            {/* Account Creation */}
+            {/* STEP 3: Account Creation */}
             {step === 3 && (
               <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
                  <div className="flex items-center gap-3 mb-6">
@@ -223,13 +228,13 @@ export default function IntakePipeline() {
 
                 <div className="mb-6 flex bg-black border border-white/10 rounded-lg p-1">
                   <button 
-                    onClick={() => setIsExistingUser(false)}
+                    onClick={() => { setIsExistingUser(false); setErrorMsg(''); }}
                     className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${!isExistingUser ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white'}`}
                   >
                     New Account
                   </button>
                   <button 
-                    onClick={() => setIsExistingUser(true)}
+                    onClick={() => { setIsExistingUser(true); setErrorMsg(''); }}
                     className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${isExistingUser ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white'}`}
                   >
                     Existing Client
@@ -245,6 +250,14 @@ export default function IntakePipeline() {
                     <label className="block text-xs font-medium text-zinc-400 mb-2">Password</label>
                     <input type="password" required value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors" placeholder="••••••••" />
                   </div>
+
+                  {/* --- THE ERROR BANNER --- */}
+                  {errorMsg && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 text-red-400 text-xs">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      {errorMsg}
+                    </div>
+                  )}
 
                   <div className="flex gap-3 mt-8">
                     <button type="button" onClick={handleBack} className="px-4 py-3.5 bg-white/5 text-white border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
