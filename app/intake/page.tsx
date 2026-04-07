@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect. Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { verifyPaystackReference } from './actions'; 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,7 +8,7 @@ import { ArrowRight, ArrowLeft, Building2, Workflow, Lock, Loader2, AlertCircle 
 import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image'
 
-export default function IntakePipeline() {
+function IntakePipelineContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -320,5 +320,17 @@ export default function IntakePipeline() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function IntakePipeline() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#000000] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    }>
+      <IntakePipelineContent />
+    </Suspense>
   );
 }

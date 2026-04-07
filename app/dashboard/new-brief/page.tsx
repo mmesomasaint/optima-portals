@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Workflow, ArrowRight, Loader2, Database, AlertCircle } from 'lucide-react';
 import { verifyPaystackReference } from '@/app/intake/actions'; // <-- REUSING OUR SECURE ACTION
 
-export default function NewBriefPage() {
+function NewBriefContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -177,5 +177,17 @@ export default function NewBriefPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function NewBriefPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-[70vh] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    }>
+      <NewBriefContent />
+    </Suspense>
   );
 }
