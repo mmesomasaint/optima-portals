@@ -1,16 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Workflow, ArrowRight, Loader2, Database, AlertCircle } from 'lucide-react';
+import { verifyPaystackReference } from '@/app/intake/actions'; // <-- REUSING OUR SECURE ACTION
 
 export default function NewBriefPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState(''); 
+  const [errorMsg, setErrorMsg] = useState('');
+  
+  // Security States
+  const [isVerifying, setIsVerifying] = useState(true);
+  const reference = searchParams.get('reference') || searchParams.get('trxref');
   
   const [formData, setFormData] = useState({
     workspaceName: '',
@@ -32,15 +39,38 @@ export default function NewBriefPage() {
     checkUser();
   }, [router, supabase.auth]);
 
+  // The Verification Effect (The Gatekeeper)
+  useEffect(() => {
+    const checkPayment = async () => {
+      if (!reference) {
+        // No reference? Kick them back to the dashboard.
+        router.push('/dashboard');
+        return;
+      }
+
+      const result = await verifyPaystackReference(reference);
+      
+      if (!result.success) {
+        // Fake/Failed reference? Kick them out.
+        router.push('/dashboard');
+      } else {
+        // Verified! Show the form.
+        setIsVerifying(false);
+      }
+    };
+
+    checkPayment();
+  }, [reference, router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) return;
     
     setIsSubmitting(true);
-    setErrorMsg(''); // <-- Clear previous errors on new attempt
+    setErrorMsg(''); 
     
     try {
-      // Inject the new Operational Brief
+      // Inject the new Operational Brief & Burn the Key
       const { data: insertedBrief, error: dbError } = await supabase
         .from('operational_briefs')
         .insert([
@@ -51,13 +81,18 @@ export default function NewBriefPage() {
             current_tools: formData.currentTools,
             primary_bottleneck: formData.primaryBottleneck,
             data_relationships: "Initializing AI build sequence...",
-            status: 'pending_ai_build'
+            status: 'pending_ai_build',
+            payment_status: 'paid', // <-- Pre-marked as paid
+            paystack_reference: reference // <-- The Burning Key
           }
         ])
         .select()
         .single();
 
-      if (dbError) throw new Error(dbError.message);
+      if (dbError) {
+        if (dbError.code === '23505') throw new Error("This payment link has already been used.");
+        throw new Error(dbError.message);
+      }
       if (!insertedBrief) throw new Error("Failed to retrieve the new brief ID.");
 
       // Teleport back to Command Center
@@ -66,11 +101,22 @@ export default function NewBriefPage() {
 
     } catch (error: any) {
       console.error("Pipeline Error:", error);
-      setErrorMsg(`Deployment Failed: ${error.message}`); // <-- Replaced alert()
+      setErrorMsg(`Deployment Failed: ${error.message}`); 
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Full-screen loading state while checking Paystack
+  if (isVerifying) {
+    return (
+      <div className="h-[70vh] flex flex-col items-center justify-center relative">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-emerald-500/5 blur-[100px] rounded-full pointer-events-none" />
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4 relative z-10" />
+        <p className="text-zinc-400 text-sm font-medium animate-pulse relative z-10">Verifying additional license...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out max-w-2xl mx-auto">
@@ -117,7 +163,6 @@ export default function NewBriefPage() {
             </div>
           </div>
 
-          {/* --- THE ERROR BANNER --- */}
           {errorMsg && (
             <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 text-red-400 text-xs">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />

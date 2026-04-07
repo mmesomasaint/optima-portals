@@ -1,19 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { verifyPaystackReference } from './actions'; 
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Building2, Workflow, Lock, Loader2, AlertCircle } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image'
 
 export default function IntakePipeline() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExistingUser, setIsExistingUser] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Security States
+  const [isVerifying, setIsVerifying] = useState(true);
+  const reference = searchParams.get('reference') || searchParams.get('trxref'); // Paystack uses both interchangeably sometimes
   
   // The Payload State
   const [formData, setFormData] = useState({
@@ -84,13 +90,19 @@ export default function IntakePipeline() {
             current_tools: formData.currentTools,
             primary_bottleneck: formData.primaryBottleneck,
             data_relationships: "Initializing AI build sequence...",
-            status: 'pending_ai_build'
+            status: 'pending_ai_build',
+            payment_status: 'paid',
+            paystack_reference: reference 
           }
         ])
         .select() 
         .single();
-
-      if (dbError) throw new Error(dbError.message);
+        
+      if (dbError) {
+        // If it throws a unique constraint error, someone is reusing the link
+        if (dbError.code === '23505') throw new Error("This payment link has already been used.");
+        throw new Error(dbError.message);
+      }
       if (!insertedBrief) throw new Error("Failed to retrieve the new brief ID.");
 
       // Teleport the user to their new Dashboard
@@ -104,6 +116,39 @@ export default function IntakePipeline() {
       setIsSubmitting(false);
     }
   };
+
+  // The Verification Effect
+  useEffect(() => {
+    const checkPayment = async () => {
+      if (!reference) {
+        // No reference? Kick them to the storefront.
+        router.push('https://optimalogic.studio');
+        return;
+      }
+
+      const result = await verifyPaystackReference(reference);
+      
+      if (!result.success) {
+        // Fake/Failed reference? Kick them out.
+        router.push('https://optimalogic.studio');
+      } else {
+        // Verified! Show the form.
+        setIsVerifying(false);
+      }
+    };
+
+    checkPayment();
+  }, [reference, router]);
+
+  if (isVerifying) {
+    return (
+      <div className="min-h-screen bg-[#000000] flex flex-col items-center justify-center p-6 relative">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none" />
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4 relative z-10" />
+        <p className="text-zinc-400 text-sm font-medium animate-pulse relative z-10">Verifying secure payment session...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#000000] flex flex-col items-center justify-center p-6 relative overflow-hidden">
