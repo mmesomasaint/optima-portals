@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect. Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { verifyPaystackReference } from './actions'; 
 import { motion, AnimatePresence } from 'framer-motion';
