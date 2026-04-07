@@ -16,7 +16,9 @@ export default function IntakePipeline() {
   
   // The Payload State
   const [formData, setFormData] = useState({
+    founderName: '',
     companyName: '',
+    workspaceName: '',
     teamSize: '',
     currentTools: '',
     primaryBottleneck: '',
@@ -44,13 +46,20 @@ export default function IntakePipeline() {
           email: formData.email,
           password: formData.password,
         });
+
         authData = response.data;
         authError = response.error;
       } else {
         const response = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
+          options: {
+            data: {
+              full_name: formData.founderName, 
+            }
+          }
         });
+
         authData = response.data;
         authError = response.error;
       }
@@ -65,6 +74,7 @@ export default function IntakePipeline() {
           {
             user_id: authData.user.id,
             company_name: formData.companyName,
+            workspace_name: formData.workspaceName,
             team_size: formData.teamSize,
             current_tools: formData.currentTools,
             primary_bottleneck: formData.primaryBottleneck,
@@ -138,10 +148,22 @@ export default function IntakePipeline() {
                 <p className="text-zinc-500 text-sm mb-6">Let's start with who we are building for.</p>
                 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-400 mb-2">Company Name</label>
-                    <input type="text" value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors" placeholder="e.g. Lumina Agency" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-400 mb-2">Your Name</label>
+                      <input required type="text" value={formData.founderName} onChange={e => setFormData({...formData, founderName: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors" placeholder="e.g. Saint" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-400 mb-2">Company Name</label>
+                      <input required type="text" value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors" placeholder="e.g. Optima Logic" />
+                    </div>
                   </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-2">Workspace Name</label>
+                    <input required type="text" value={formData.workspaceName} onChange={e => setFormData({...formData, workspaceName: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors" placeholder="e.g. Content Team Portal" />
+                  </div>
+
                   <div>
                     <label className="block text-xs font-medium text-zinc-400 mb-2">Team Size</label>
                     <select value={formData.teamSize} onChange={e => setFormData({...formData, teamSize: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors appearance-none">
@@ -153,7 +175,7 @@ export default function IntakePipeline() {
                   </div>
                 </div>
                 
-                <button onClick={handleNext} disabled={!formData.companyName} className="w-full mt-8 py-3.5 bg-white text-black text-sm font-semibold rounded-xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                <button onClick={handleNext} disabled={!formData.companyName || !formData.founderName || !formData.workspaceName || !formData.teamSize} className="w-full mt-8 py-3.5 bg-white text-black text-sm font-semibold rounded-xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                   Next Step <ArrowRight className="w-4 h-4" />
                 </button>
               </motion.div>

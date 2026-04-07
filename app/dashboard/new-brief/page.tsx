@@ -12,7 +12,7 @@ export default function NewBriefPage() {
   const [userId, setUserId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
-    companyName: '',
+    workspaceName: '',
     teamSize: '',
     currentTools: '',
     primaryBottleneck: '',
@@ -44,7 +44,7 @@ export default function NewBriefPage() {
         .insert([
           {
             user_id: userId,
-            company_name: formData.companyName,
+            workspace_name: formData.workspaceName,
             team_size: formData.teamSize,
             current_tools: formData.currentTools,
             primary_bottleneck: formData.primaryBottleneck,
@@ -91,7 +91,7 @@ export default function NewBriefPage() {
           <div className="space-y-4 border-b border-white/10 pb-6">
             <div>
               <label className="block text-xs font-medium text-zinc-400 mb-2">Workspace Name</label>
-              <input required type="text" value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors" placeholder="e.g. Content Team Portal" />
+              <input required type="text" value={formData.workspaceName} onChange={e => setFormData({...formData, workspaceName: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors" placeholder="e.g. Content Team Portal" />
             </div>
             <div>
               <label className="block text-xs font-medium text-zinc-400 mb-2">Team Size</label>
@@ -115,7 +115,7 @@ export default function NewBriefPage() {
             </div>
           </div>
 
-          <button type="submit" disabled={isSubmitting || !formData.companyName || !formData.primaryBottleneck} className="w-full mt-8 py-3.5 bg-emerald-500 text-black text-sm font-semibold rounded-xl hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+          <button type="submit" disabled={isSubmitting || !formData.workspaceName || !formData.primaryBottleneck} className="w-full mt-8 py-3.5 bg-emerald-500 text-black text-sm font-semibold rounded-xl hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Launch Engine Build'} <ArrowRight className="w-4 h-4" />
           </button>
 

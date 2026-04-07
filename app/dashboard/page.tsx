@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 export default function ClientDashboard() {
   const router = useRouter();
   const supabase = createClient();
+  const [userName, setUserName] = useState<string>('Founder');
   const [isLoading, setIsLoading] = useState(true);
   const [isIgniting, setIsIgniting] = useState(false);
   
@@ -21,6 +22,16 @@ export default function ClientDashboard() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
+
+        // Identify the Agency Owner's Name for the Welcome Message
+        const metadataName = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
+        if (metadataName) {
+          setUserName(metadataName);
+        } else if (session.user.email) {
+          // Fallback: If no name was provided at signup, capitalize the first part of their email
+          const emailName = session.user.email.split('@')[0];
+          setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
+        }
 
         // 1. Fetch ALL Briefs, ordered by newest first
         const { data: briefData } = await supabase
@@ -96,7 +107,7 @@ export default function ClientDashboard() {
       {/* Welcome Header */}
       <div className="mb-10">
         <h1 className="text-3xl md:text-4xl font-medium tracking-tight mb-3 text-white">
-          Welcome back, {latestBrief?.company_name || 'Founder'}.
+          Welcome back, {userName}.
         </h1>
         <p className="text-zinc-400 font-light">Optima Engine Command Center.</p>
       </div>

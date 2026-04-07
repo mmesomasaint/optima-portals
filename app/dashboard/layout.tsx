@@ -1,9 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { CreditCard, Settings, LogOut, Workflow, Plus } from "lucide-react";
+import { Workflow, Plus } from "lucide-react";
 import { SidebarNav } from "@/components/mini/SidebarNav";
-import { SignOutButton } from "@/components/mini/SignOutButton";
 import { SidebarBottomNav } from "@/components/mini/SidebarBottomNav";
 
 export default async function DashboardLayout({ children } : { children: React.ReactNode }) {
@@ -14,11 +13,14 @@ export default async function DashboardLayout({ children } : { children: React.R
     redirect("/login");
   }
 
-  const { data: brief, error: briefError } = await supabase
-  .from("operational_briefs")
-  .select("company_name, status")
-  .eq("user_id", user.id) 
-  .maybeSingle();
+  // Fetch the MOST RECENT operational brief
+  const { data: latestBrief, error: briefError } = await supabase
+    .from("operational_briefs")
+    .select("company_name, status")
+    .eq("user_id", user.id) 
+    .order("created_at", { ascending: false }) // Sort by newest
+    .limit(1) // Only take the top one
+    .maybeSingle();
 
   return (
     <div className="flex h-screen bg-[#000000] font-sans text-white overflow-hidden">
@@ -34,7 +36,7 @@ export default async function DashboardLayout({ children } : { children: React.R
 
         <div className="px-6">
           <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-1.5">Active Workspace</p>
-          <p className="text-sm font-medium text-zinc-200 truncate">{brief?.company_name || "New Agency"}</p>
+          <p className="text-sm font-medium text-zinc-200 truncate">{latestBrief?.company_name || "New Agency"}</p>
           
           {/* THE UPSELL BUTTON */}
           <Link 
