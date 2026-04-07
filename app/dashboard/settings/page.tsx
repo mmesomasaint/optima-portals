@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { User, Lock, Loader2, CheckCircle2, Shield } from 'lucide-react';
+import { User, Lock, Loader2, CheckCircle2, Shield, AlertTriangle } from 'lucide-react';
 
 export default function SettingsPage() {
   const supabase = createClient();
