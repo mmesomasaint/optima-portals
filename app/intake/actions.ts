@@ -15,7 +15,7 @@ export async function verifyPaystackReference(reference: string) {
 
     if (data.status && data.data.status === "success") {
       // Security Check: Ensure they actually paid the right amount (e.g., $250.00 = 25000 cents/kobo)
-      // if (data.data.amount < 25000) return { success: false, message: "Partial payment detected." };
+      if (data.data.amount < 25000) return { success: false, message: "Partial payment detected." };
       
       return { success: true };
     }
