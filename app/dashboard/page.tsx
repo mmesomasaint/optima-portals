@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { Loader2, Database, CheckCircle2, Workflow, AlertTriangle, Link2, Zap, ArrowUpRight, Calendar, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import OnboardingTour from '@/components/mini/OnboardingTour';
 
 export default function ClientDashboard() {
   const router = useRouter();
@@ -133,7 +134,8 @@ export default function ClientDashboard() {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out pb-12">
-      
+      <OnboardingTour isNotionReady={isNotionReady} briefStatus={latestBrief?.status} />
+
       {/* Welcome Header */}
       <div className="mb-10">
         <h1 className="text-3xl md:text-4xl font-medium tracking-tight mb-3 text-white">
@@ -144,7 +146,7 @@ export default function ClientDashboard() {
 
       {/* --- THE LOGIC GATE (For the newest brief only) --- */}
       {latestBrief?.status === 'pending_ai_build' && !isNotionReady && (
-        <div className="bg-red-500/5 border border-red-500/10 rounded-3xl p-8 mb-8">
+        <div id="tour-step-1" className="bg-red-500/5 border border-red-500/10 rounded-3xl p-8 mb-8">
           <div className="flex items-center gap-3 mb-4">
             <AlertTriangle className="w-6 h-6 text-red-400" />
             <h2 className="text-xl font-medium text-white">Action Required: Connect Notion</h2>
@@ -153,7 +155,7 @@ export default function ClientDashboard() {
             Your operational brief is ready, but the AI engine cannot build your workspace until you grant it access to your Notion account and provide a Master URL.
           </p>
           <Link href="/dashboard/integrations">
-            <button className="px-6 py-3 bg-white text-black text-sm font-semibold rounded-xl hover:bg-zinc-200 transition-colors flex items-center gap-2">
+            <button id="tour-step-1-btn" className="px-6 py-3 bg-white text-black text-sm font-semibold rounded-xl hover:bg-zinc-200 transition-colors flex items-center gap-2">
               <Link2 className="w-4 h-4" /> Go to Integrations
             </button>
           </Link>
@@ -161,7 +163,7 @@ export default function ClientDashboard() {
       )}
 
       {latestBrief?.status === 'pending_ai_build' && isNotionReady && (
-        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-3xl p-8 mb-8 text-center shadow-[0_0_40px_rgba(16,185,129,0.1)]">
+        <div id="tour-step-2" className="bg-emerald-500/10 border border-emerald-500/20 rounded-3xl p-8 mb-8 text-center shadow-[0_0_40px_rgba(16,185,129,0.1)]">
           <Zap className="w-8 h-8 text-emerald-500 mx-auto mb-4" />
           <h2 className="text-xl font-medium text-white mb-2">Systems Ready for Deployment</h2>
           <p className="text-sm text-zinc-400 font-light mb-6 max-w-lg mx-auto">
