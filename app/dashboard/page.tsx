@@ -67,6 +67,33 @@ export default function ClientDashboard() {
   const latestBrief = briefs.length > 0 ? briefs[0] : null;
   const deployedWorkspaces = briefs.filter(b => b.status === 'completed' && b.live_notion_url);
 
+  // If the engine is running, check the database every 3 seconds for the result
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (latestBrief?.status === 'processing') {
+      interval = setInterval(async () => {
+        const { data, error } = await supabase
+          .from('operational_briefs')
+          .select('status, live_notion_url, data_relationships')
+          .eq('id', latestBrief.id)
+          .single();
+          
+        if (data && (data.status === 'completed' || data.status === 'failed')) {
+          // The engine finished! Update the UI and stop polling.
+          setBriefs(prevBriefs => {
+            const updated = [...prevBriefs];
+            updated[0] = { ...updated[0], ...data };
+            return updated;
+          });
+          setIsIgniting(false);
+        }
+      }, 3000); 
+    }
+    
+    return () => clearInterval(interval); // Cleanup when unmounted or finished
+  }, [latestBrief?.status, latestBrief?.id, supabase]);
+
   const handleIgniteEngine = async () => {
     if (!latestBrief || !isNotionReady) return;
     setIsIgniting(true);
