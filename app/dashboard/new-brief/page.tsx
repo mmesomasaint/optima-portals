@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Workflow, ArrowRight, Loader2, Database, AlertCircle } from 'lucide-react';
-import { verifyPaystackReference } from '@/app/intake/actions'; // <-- REUSING OUR SECURE ACTION
+import { verifyPaystackReference } from '@/app/intake/actions';
 
 function NewBriefContent() {
   const router = useRouter();
@@ -13,6 +13,7 @@ function NewBriefContent() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string>('Optima Client');
   const [errorMsg, setErrorMsg] = useState('');
   
   // Security States
@@ -26,18 +27,31 @@ function NewBriefContent() {
     primaryBottleneck: '',
   });
 
-  // Verify session on load
+  // Verify session and fetch their existing company name on load
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setUserId(session.user.id);
+        
+        const { data: previousBrief } = await supabase
+          .from('operational_briefs')
+          .select('company_name')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (previousBrief && previousBrief.company_name) {
+          setCompanyName(previousBrief.company_name);
+        }
+        
       } else {
-        router.push('/login');
+        router.push('https://optimalogic.studio');
       }
     };
     checkUser();
-  }, [router, supabase.auth]);
+  }, [router, supabase]);
 
   // The Verification Effect (The Gatekeeper)
   useEffect(() => {
@@ -76,14 +90,15 @@ function NewBriefContent() {
         .insert([
           {
             user_id: userId,
+            company_name: companyName,
             workspace_name: formData.workspaceName,
             team_size: formData.teamSize,
             current_tools: formData.currentTools,
             primary_bottleneck: formData.primaryBottleneck,
             data_relationships: "Initializing AI build sequence...",
             status: 'pending_ai_build',
-            payment_status: 'paid', // <-- Pre-marked as paid
-            paystack_reference: reference // <-- The Burning Key
+            payment_status: 'paid',
+            paystack_reference: reference
           }
         ])
         .select()
